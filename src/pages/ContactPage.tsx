@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
-import { Mail, MessageSquare, Send } from "lucide-react";
-import { Logo } from "../components/ui/Logo";
+import { Mail, Send } from "lucide-react";
+
 import { useState } from "react";
 import { toast } from "sonner";
 

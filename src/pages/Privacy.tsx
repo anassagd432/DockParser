@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Shield, Lock, FileText, Database } from "lucide-react";
+import { ArrowLeft, Lock, Database } from "lucide-react";
 import { Button } from "../components/ui/Button";
 
 export const Privacy = () => {

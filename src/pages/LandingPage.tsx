@@ -1,11 +1,11 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { motion } from "framer-motion";
-import { Check, Upload, Brain, FileSpreadsheet, Shield, ArrowRight, Zap, XCircle, CheckCircle2 } from "lucide-react";
+import { Check, Upload, Brain, FileSpreadsheet, ArrowRight, Zap, XCircle, CheckCircle2 } from "lucide-react";
 import { Logo } from "../components/ui/Logo";
 
 export const LandingPage = () => {
-    const navigate = useNavigate();
+
 
     return (
         <div className="min-h-screen bg-[#0A0C10] text-white selection:bg-blue-500/30">

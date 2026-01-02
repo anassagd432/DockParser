@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { toast } from "sonner";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowLeft, Mail, Lock, Loader2 } from "lucide-react";
 import { Logo } from "../components/ui/Logo";
 
@@ -11,7 +11,7 @@ export const SignupPage = () => {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const navigate = useNavigate();
+
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
