@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-white antialiased min-h-screen overflow-x-hidden;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply backdrop-blur-xl bg-white/5 border border-white/10;
+  }
+
+  .glass-card {
+    @apply glass rounded-3xl;
+  }
+}
+
+@keyframes flow {
+  0% {
+    left: 0;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
