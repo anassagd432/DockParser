@@ -30,14 +30,15 @@ async function uploadFile(file: File): Promise<string> {
 export async function extractContractRules(file: File) {
     try {
         console.log("Uploading file for contract extraction...");
-        const fileUrl = await uploadFile(file);
+        // Create FormData for the file
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'contract');
 
         console.log("Invoking Edge Function 'process-invoice' (type: contract)...");
         const { data, error } = await supabase.functions.invoke('process-invoice', {
-            body: {
-                fileUrl,
-                type: 'contract'
-            }
+            body: formData,
+            // Header Content-Type is inferred automatically
         });
 
         if (error) throw error;
