@@ -1,10 +1,10 @@
 # DockParser (InvoiceFlow AI)
 
-DockParser is an AI-powered invoice and contract processing application. It leverages **Supabase** for backend storage and Edge Functions, and **Google Gemini 1.5** for intelligent document parsing.
+DockParser is an AI-powered invoice and contract processing application. It leverages **Supabase** for backend storage and Edge Functions, and **Google Gemini 3.0 Pro** for intelligent document parsing.
 
 ## Features
 
--   **AI Parsing**: Extracts structured data (invoice details, contract rules) from PDFs and images using Google Gemini.
+-   **AI Parsing**: Extracts structured data (invoice details, contract rules) from PDFs and images using Google Gemini 3.0 Pro.
 -   **Supabase Integrated**: Uses Supabase for Auth, Storage, and Edge Functions.
 -   **Modern Tech Stack**: Built with React, Vite, TypeScript, Tailwind CSS, and Framer Motion.
 -   **Responsive Design**: Interactive and reliable UI.
