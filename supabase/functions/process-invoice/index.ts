@@ -60,16 +60,41 @@ Deno.serve(async (req) => {
             generationConfig: { response_mime_type: "application/json" }
         }
 
-        const geminiRes = await fetch(geminiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(geminiPayload)
-        })
+        // Retry configuration
+        const MAX_RETRIES = 3
+        let attempt = 0
+        let geminiRes: Response | undefined
+        let success = false
 
-        if (!geminiRes.ok) {
-            const errorText = await geminiRes.text()
-            throw new Error(`Gemini API Error (${geminiRes.status}): ${errorText}`)
+        while (attempt < MAX_RETRIES && !success) {
+            attempt++
+            try {
+                console.log(`Attempt ${attempt}: Calling Gemini...`)
+                geminiRes = await fetch(geminiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(geminiPayload)
+                })
+
+                if (geminiRes.status === 503) {
+                    console.warn(`Gemini 503 Overloaded. Retrying in 2 seconds...`)
+                    await new Promise(r => setTimeout(r, 2000)) // Wait 2s
+                    continue
+                }
+
+                if (!geminiRes.ok) {
+                    const errorText = await geminiRes.text()
+                    throw new Error(`Gemini API Error (${geminiRes.status}): ${errorText}`)
+                }
+
+                success = true
+            } catch (err) {
+                if (attempt === MAX_RETRIES) throw err
+                console.warn(`Attempt ${attempt} failed. Retrying...`)
+            }
         }
+
+        if (!geminiRes) throw new Error('Gemini API request failed to complete')
 
         const geminiData = await geminiRes.json()
         const extractedText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
