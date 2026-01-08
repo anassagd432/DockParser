@@ -1,73 +1,76 @@
-# React + TypeScript + Vite
+# DockParser (InvoiceFlow AI)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+DockParser is an AI-powered invoice and contract processing application. It leverages **Supabase** for backend storage and Edge Functions, and **Google Gemini 1.5** for intelligent document parsing.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+-   **AI Parsing**: Extracts structured data (invoice details, contract rules) from PDFs and images using Google Gemini.
+-   **Supabase Integrated**: Uses Supabase for Auth, Storage, and Edge Functions.
+-   **Modern Tech Stack**: Built with React, Vite, TypeScript, Tailwind CSS, and Framer Motion.
+-   **Responsive Design**: Interactive and reliable UI.
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerequisites
 
-## Expanding the ESLint configuration
+-   Node.js (v18+)
+-   Supabase Account and Project
+-   Google AI Studio API Key
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Installation
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/yourusername/DockParser.git
+    cd DockParser
+    ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+3.  **Environment Setup:**
+
+    Copy the `.env.example` file to `.env`:
+    ```bash
+    cp .env.example .env
+    ```
+
+    Fill in your Supabase credentials in `.env`:
+    ```env
+    VITE_SUPABASE_URL=your_supabase_project_url
+    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    ```
+
+### Backend Setup (Supabase)
+
+This project relies on Supabase Edge Functions.
+
+1.  Set your Gemini API Key in Supabase secrets:
+    ```bash
+    supabase secrets set GEMINI_API_KEY=your_google_ai_key
+    ```
+2.  Deploy the Edge Functions:
+    ```bash
+    supabase functions deploy process-invoice
+    supabase functions deploy create-checkout
+    ```
+
+### Running Locally
+
+```bash
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Build
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+To build for production:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
+
+## License
+
+MIT

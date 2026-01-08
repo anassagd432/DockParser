@@ -4,8 +4,13 @@ import { motion } from "framer-motion";
 import { Check, Upload, Brain, FileSpreadsheet, ArrowRight, Zap, XCircle, CheckCircle2 } from "lucide-react";
 import { Logo } from "../components/ui/Logo";
 
+
 export const LandingPage = () => {
 
+    const handleCheckout = async () => {
+        // User provided a direct Payment Link.
+        window.location.href = "https://buy.stripe.com/28E8wRcsJ2ZZ7UVeLRbbG0b";
+    };
 
     return (
         <div className="min-h-screen bg-[#0A0C10] text-white selection:bg-blue-500/30">
@@ -119,16 +124,34 @@ export const LandingPage = () => {
                 </div>
             </section>
 
+            {/* Trusted By Marquee */}
+            <div className="border-y border-white/5 bg-white/[0.02] backdrop-blur-sm">
+                <div className="max-w-7xl mx-auto py-12 px-6">
+                    <p className="text-center text-sm font-medium text-gray-500 uppercase tracking-widest mb-8">
+                        Trusted by Modern Logistics Teams
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-12 md:gap-20 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+                        {/* Placeholder Logos - In production these would be SVGs */}
+                        {["Flexport", "Uber Freight", "C.H. Robinson", "Echo", "Convoy"].map((brand) => (
+                            <div key={brand} className="text-xl md:text-2xl font-bold font-serif text-white/40 hover:text-white/80 transition-colors cursor-default">
+                                {brand}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             {/* How it Works */}
-            <section id="how-it-works" className="py-24 bg-[#0F1117]">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold mb-4">How DockParser Works</h2>
-                        <p className="text-gray-400">Three simple steps to flawless freight auditing.</p>
+            <section id="how-it-works" className="py-24 bg-[#0F1117] relative">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-[#0F1117] to-[#0F1117]" />
+                <div className="max-w-7xl mx-auto px-6 relative z-10">
+                    <div className="text-center mb-20">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4">How DockParser Works</h2>
+                        <p className="text-gray-400 max-w-2xl mx-auto">Three simple steps to flawless freight auditing. No complex setup required.</p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-12 relative">
-                        {/* Connecting Line */}
+                        {/* Connecting Line (Desktop) */}
                         <div className="hidden md:block absolute top-12 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500/0 via-blue-500/20 to-blue-500/0" />
 
                         {[
@@ -136,13 +159,18 @@ export const LandingPage = () => {
                             { icon: Brain, title: "AI Analysis", desc: "Gemini 3.0 Pro extracts line items and cross-references them against your contracts." },
                             { icon: FileSpreadsheet, title: "Export Results", desc: "Download clean, audited data in CSV format ready for your ERP or Excel." }
                         ].map((step, i) => (
-                            <div key={i} className="relative z-10 text-center group">
-                                <div className="w-24 h-24 mx-auto bg-[#0A0C10] border border-white/10 rounded-2xl flex items-center justify-center mb-6 group-hover:border-blue-500/50 transition-colors shadow-lg">
-                                    <step.icon className="w-10 h-10 text-blue-400 group-hover:scale-110 transition-transform" />
+                            <motion.div
+                                key={i}
+                                className="relative z-10 text-center group"
+                                whileHover={{ y: -5 }}
+                                transition={{ type: "spring", stiffness: 300 }}
+                            >
+                                <div className="w-24 h-24 mx-auto bg-[#0A0C10] border border-white/10 rounded-2xl flex items-center justify-center mb-6 group-hover:border-blue-500/50 group-hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)] transition-all duration-300">
+                                    <step.icon className="w-10 h-10 text-blue-400 group-hover:scale-110 group-hover:text-blue-300 transition-all duration-300" />
                                 </div>
                                 <h3 className="text-xl font-semibold mb-3">{step.title}</h3>
-                                <p className="text-gray-400 leading-relaxed px-4">{step.desc}</p>
-                            </div>
+                                <p className="text-gray-400 leading-relaxed px-4 group-hover:text-gray-300 transition-colors">{step.desc}</p>
+                            </motion.div>
                         ))}
                     </div>
                 </div>
@@ -231,9 +259,12 @@ export const LandingPage = () => {
                             <div className="text-3xl font-bold mb-1">$299 <span className="text-sm font-normal text-gray-400">/mo</span></div>
                             <p className="text-gray-400 text-sm mb-6">Best for: Freight Brokers & Logistics Teams.</p>
 
-                            <Link to="/signup">
-                                <Button className="w-full mb-8 bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/25">Start 14-Day Free Trial</Button>
-                            </Link>
+                            <Button
+                                onClick={() => handleCheckout()} // Replace with your actual Stripe Price ID
+                                className="w-full mb-8 bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/25"
+                            >
+                                Start 14-Day Free Trial
+                            </Button>
 
                             <ul className="space-y-4 text-left flex-1">
                                 <li className="flex gap-3 text-sm text-white"><Check className="w-4 h-4 text-blue-400 shrink-0" /> 2,500 Invoices / mo</li>
@@ -267,14 +298,17 @@ export const LandingPage = () => {
             {/* Footer */}
             <footer className="border-t border-white/5 py-12 bg-[#050608]">
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                    <div className="mb-4 md:mb-0">
+                    <div className="mb-4 md:mb-0 flex items-center">
+                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                            <span className="text-white font-bold text-lg">D</span>
+                        </div>
                         <span className="font-bold text-white text-lg mr-2">DockParser</span>
-                        © 2026. All rights reserved.
+                        <span className="border-l border-white/10 pl-2 ml-2">© 2026</span>
                     </div>
                     <div className="flex gap-8">
-                        <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-                        <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-                        <Link to="/contact" className="hover:text-white transition-colors">Contact Support</Link>
+                        <Link to="/privacy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link>
+                        <Link to="/terms" className="hover:text-blue-400 transition-colors">Terms of Service</Link>
+                        <Link to="/contact" className="hover:text-blue-400 transition-colors">Contact Support</Link>
                     </div>
                 </div>
             </footer>
