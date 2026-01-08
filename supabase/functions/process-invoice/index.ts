@@ -22,12 +22,12 @@ Deno.serve(async (req: Request) => {
         // Environment Variables
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
         const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-        const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || '';
+        const apiKey = Deno.env.get('GEMINI_API_KEY') || '';
 
         if (!supabaseUrl || !supabaseServiceKey) {
             throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
         }
-        if (!geminiApiKey) {
+        if (!apiKey) {
             throw new Error('Missing GEMINI_API_KEY');
         }
 
@@ -99,7 +99,7 @@ Deno.serve(async (req: Request) => {
             : `Analyze this invoice image. Extract all data. Return ONLY valid JSON in this exact format: {"vendor":"Company Name","invoice_date":"YYYY-MM-DD","total_amount":0.00,"currency":"USD","confidence":0.95,"line_items":[{"description":"Item","qty":1,"unit_price":0.00,"total":0.00}],"audit_flags":[]}. Do not include markdown or explanation.`;
 
         // MODEL: gemini-1.5-flash
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         const geminiPayload = {
             contents: [{
