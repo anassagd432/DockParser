@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -8,15 +8,30 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+    // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
 
     try {
-        // 0. Initialize Supabase Client to check Auth & Rate Limits
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        const supabase = createClient(supabaseUrl, supabaseKey)
+        console.log(`Received request: ${req.method}`);
+
+        // 0. Initialize Supabase Client
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+        if (!supabaseUrl || !supabaseKey) {
+            console.error('Missing Supabase Environment Variables');
+            throw new Error('Server usage configuration error.');
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                persistSession: false,
+                autoRefreshToken: false,
+                detectSessionInUrl: false,
+            }
+        });
 
         // 1. Get User from Auth Header
         const authHeader = req.headers.get('Authorization')!
