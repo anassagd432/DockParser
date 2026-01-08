@@ -7,7 +7,7 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
-    // 1. Handle CORS Preflight (OPTIONS)
+    // 1. Handle CORS Preflight
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
@@ -38,8 +38,7 @@ Deno.serve(async (req) => {
             userId = user?.id || null
         }
 
-        // 4. Prepare Image for Gemini (SAFE METHOD)
-        // We use the standard library 'encodeBase64' to handle large files without crashing
+        // 4. Prepare Image
         const arrayBuffer = await file.arrayBuffer()
         const base64 = encodeBase64(arrayBuffer)
 
@@ -47,28 +46,29 @@ Deno.serve(async (req) => {
         const apiKey = Deno.env.get('GEMINI_API_KEY')
         if (!apiKey) throw new Error('Missing GEMINI_API_KEY secret')
 
+        // ✅ UPDATED: Using 'gemini-2.5-flash' based on your available models list
+        const modelName = 'gemini-2.5-flash'
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`
+
         const geminiPayload = {
             contents: [{
                 parts: [
-                    { text: "Extract these fields from the invoice: total_amount (number), vendor_name (string), date (YYYY-MM-DD), line_items (array of objects). Return valid JSON only." },
+                    { text: "Extract these fields from the invoice: total_amount (number), vendor_name (string), date (YYYY-MM-DD), line_items (array of objects). Return PURE JSON only. Do not wrap in markdown blocks." },
                     { inline_data: { mime_type: file.type, data: base64 } }
                 ]
             }],
             generationConfig: { response_mime_type: "application/json" }
         }
 
-        const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(geminiPayload)
-            }
-        )
+        const geminiRes = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(geminiPayload)
+        })
 
         if (!geminiRes.ok) {
             const errorText = await geminiRes.text()
-            throw new Error(`Gemini API Error ${geminiRes.status}: ${errorText}`)
+            throw new Error(`Gemini API Error (${geminiRes.status}): ${errorText}`)
         }
 
         const geminiData = await geminiRes.json()
@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
         })
 
     } catch (error) {
-        console.error('Final Error Log:', error)
+        console.error('Function Error:', error)
         return new Response(JSON.stringify({ error: error.message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500,
