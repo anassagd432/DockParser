@@ -3,29 +3,7 @@ import { supabase } from "./supabase";
 /**
  * Uploads a file to Supabase Storage and returns the public URL.
  */
-async function uploadFile(file: File): Promise<string> {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-        .from('invoices')
-        .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-        throw new Error(`Upload failed: ${uploadError.message}`);
-    }
-
-    const { data, error } = await supabase.storage
-        .from('invoices')
-        .createSignedUrl(filePath, 60 * 5); // 5 minutes expiry
-
-    if (error) {
-        throw new Error(`Failed to create signed URL: ${error.message}`);
-    }
-
-    return data.signedUrl;
-}
+// function uploadFile removed as it is no longer used
 
 export async function extractContractRules(file: File) {
     try {

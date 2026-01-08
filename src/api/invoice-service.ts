@@ -23,11 +23,14 @@ export async function processInvoice(file: File): Promise<Invoice> {
     }
 
     // 2. Fetch Active Contract Rules for Auditing
+    // 2. Fetch Active Contract Rules for Auditing (Skipped for now as logic moved to Edge Function/simplified)
+    /*
     const { data: contracts } = await supabase
         .from('contracts')
-        .select('vendor_name, extracted_rules') // Only need metadata
+        .select('vendor_name, extracted_rules')
         .eq('user_id', user.id)
         .not('extracted_rules', 'is', null);
+    */
 
     // 3. Call Gemini for Extraction & Auditing
     console.log("Calling Gemini 3.0 Pro (Auditing Mode)...");
