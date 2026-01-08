@@ -9,7 +9,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-    // 1. Handle CORS Preflight Request
+    // 1. CORS Preflight - Handle Immediately
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
@@ -17,15 +17,13 @@ serve(async (req) => {
     try {
         console.log(`Received request: ${req.method}`);
 
-        // 0. Initialize Supabase Client
-        // Note: Edge Functions have access to strict env vars.
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+        // 0. Environment Check
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        const apiKey = Deno.env.get('GEMINI_API_KEY');
 
-        if (!supabaseUrl || !supabaseKey) {
-            const errorMsg = 'Missing Supabase Environment Variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY';
-            console.error(errorMsg);
-            throw new Error(errorMsg);
+        if (!supabaseUrl || !supabaseKey || !apiKey) {
+            throw new Error('Server usage configuration error: Missing Environment Variables.');
         }
 
         const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -36,7 +34,7 @@ serve(async (req) => {
             }
         });
 
-        // 1. Get User from Auth Header
+        // 1. Auth Check
         const authHeader = req.headers.get('Authorization')
         if (!authHeader) {
             throw new Error('Missing Authorization header');
@@ -45,19 +43,19 @@ serve(async (req) => {
         const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
 
         if (userError || !user) {
-            console.error("Auth Error:", userError);
             throw new Error('Unauthorized: Invalid Token');
         }
 
-        // 2. RATE LIMITING CHECK
-        // (Simplified for stability check - keep critical logic only)
-        // Only checking limits if user is confirmed valid
+        // 2. Parse Request
+        const { fileUrl, type } = await req.json();
 
-        const now = new Date();
-        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-        const oneMinuteAgo = new Date(now.getTime() - 60 * 1000).toISOString();
+        if (!fileUrl) {
+            throw new Error('Missing fileUrl');
+        }
 
-        // Check Daily Limit
+        // 3. User Rate Limiting (Database Check)
+        // Check Daily Limit (50/day)
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         const { count: dailyCount } = await supabase
             .from('ai_usage_logs')
             .select('*', { count: 'exact', head: true })
@@ -65,10 +63,14 @@ serve(async (req) => {
             .gte('created_at', oneDayAgo);
 
         if (dailyCount && dailyCount >= 50) {
-            throw new Error('Daily limit reached (50 requests/day).');
+            return new Response(JSON.stringify({ error: "Daily limit reached (50/day)." }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 429
+            });
         }
 
-        // Check Burst Limit
+        // Check Burst Limit (10/min)
+        const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
         const { count: burstCount } = await supabase
             .from('ai_usage_logs')
             .select('*', { count: 'exact', head: true })
@@ -76,85 +78,72 @@ serve(async (req) => {
             .gte('created_at', oneMinuteAgo);
 
         if (burstCount && burstCount >= 10) {
-            throw new Error('Too many requests. Please wait a moment.');
+            return new Response(JSON.stringify({ error: "Too many requests. Please wait a moment." }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 429
+            });
         }
 
-        const { fileUrl, type } = await req.json()
-
-        // 3. Log this request
+        // 4. Log Usage
         await supabase.from('ai_usage_logs').insert({
             user_id: user.id,
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-flash', // Logging the requested model
             action: type || 'unknown'
         });
 
-        if (!fileUrl) {
-            throw new Error('Missing fileUrl')
-        }
-
-        const apiKey = Deno.env.get('GEMINI_API_KEY')
-        if (!apiKey) {
-            console.error("Missing GEMINI_API_KEY");
-            throw new Error('Missing GEMINI_API_KEY')
-        }
-
-        // 4. Download file
+        // 5. Download File
         console.log("Downloading file from:", fileUrl);
         const fileResponse = await fetch(fileUrl);
         if (!fileResponse.ok) {
-            console.error(`File download failed: ${fileResponse.status} ${fileResponse.statusText}`);
-            throw new Error(`Failed to download file from URL`);
+            throw new Error(`Failed to download file: ${fileResponse.statusText}`);
         }
-
         const blob = await fileResponse.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-        // 5. Setup Gemini
+        // 6. Gemini AI Call
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        // 6. Construct Prompt
         let prompt = "";
         if (type === 'contract') {
-            prompt = `Analyze this "master agreement" or "rate card". Extract Vendor Name and Pricing Rules. Return strict JSON: {"vendor_name": "...", "rules": [{"item_description": "...", "agreed_price": "...", "condition": "..."}]}. No markdown.`;
+            prompt = `Analyze this document. Extract Vendor Name and Pricing Rules in strict JSON: {"vendor_name": "...", "rules": [{"item_description": "...", "agreed_price": "...", "condition": "..."}]}. No markdown.`;
         } else {
             prompt = `Analyze this invoice. Extract data in strict JSON: {"vendor": "...", "invoice_date": "YYYY-MM-DD", "total_amount": 0.00, "currency": "USD", "confidence": 0.0, "line_items": [{"description": "...", "qty": 0, "unit_price": 0.00, "total": 0.00}], "audit_flags": []}. No markdown.`;
         }
 
-        // Convert Blob to Base64
-        const arrayBuffer = await blob.arrayBuffer();
-        const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-
         const result = await model.generateContent([
             prompt,
-            {
-                inlineData: {
-                    data: base64Data,
-                    mimeType: blob.type
-                }
-            }
+            { inlineData: { data: base64Data, mimeType: blob.type } }
         ]);
 
         const response = await result.response;
         const text = response.text();
+
+        // Clean and Parse JSON
         const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        let data;
-        try {
-            data = JSON.parse(cleanedText);
-        } catch (e) {
-            console.error("JSON Parse Error on Gemini output:", text);
-            throw new Error("Failed to parse AI response");
-        }
+        const data = JSON.parse(cleanedText);
 
         return new Response(JSON.stringify(data), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
-        })
+        });
 
     } catch (error: any) {
-        console.error("Edge Function Critical Error:", error);
-        return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
+        console.error("Edge Function Error:", error);
+
+        // Handle Gemini 429 (Rate Limit) specifically
+        if (error.message?.includes("429") || error.status === 429) {
+            return new Response(JSON.stringify({ error: "AI Service Busy (Rate Limit). Please try again in 30 seconds." }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 429
+            });
+        }
+
+        // Return Generic Error with CORS
+        return new Response(JSON.stringify({ error: error.message || "Internal Server Error" }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 400,
-        })
+            status: 400, // 400 is safer than 500 for client handling
+        });
     }
 })
