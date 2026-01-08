@@ -4,25 +4,46 @@ import { Button } from "../components/ui/Button";
 import { GlassCard } from "../components/ui/GlassCard";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Mail, Lock, Loader2 } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Logo } from "../components/ui/Logo";
+import { motion, AnimatePresence } from "framer-motion";
 
 export const SignupPage = () => {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [shake, setShake] = useState(false);
 
+    // Regex: At least 12 chars, 1 letter, 1 number, 1 special char
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[&%$#!?¿@]).{12,}$/;
+
+    const validatePassword = (pwd: string) => passwordRegex.test(pwd);
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
+        setShake(false);
+
+        if (password !== confirmPassword) {
+            toast.error("Passwords do not match");
+            setShake(true);
+            return;
+        }
+
+        if (!validatePassword(password)) {
+            toast.error("Password does not meet requirements");
+            setShake(true);
+            return;
+        }
+
         setLoading(true);
         try {
             const { error } = await supabase.auth.signUp({ email, password });
             if (error) throw error;
             toast.success("Account created! Please check your email.");
-            // Optionally navigate to login or show verify email message
         } catch (error: any) {
             toast.error(error.message);
+            setShake(true);
         } finally {
             setLoading(false);
         }
@@ -42,8 +63,17 @@ export const SignupPage = () => {
 
     return (
         <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center p-4 relative overflow-hidden text-white">
-            <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2 pointer-events-none" />
+            {/* Animated Background Elements */}
+            <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 8, repeat: Infinity }}
+                className="absolute top-0 left-0 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            />
+            <motion.div
+                animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
+                transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+                className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2 pointer-events-none"
+            />
 
             <div className="w-full max-w-md z-10">
                 <Link to="/" className="inline-flex items-center text-gray-400 hover:text-white mb-8 transition-colors">
@@ -51,32 +81,82 @@ export const SignupPage = () => {
                 </Link>
 
                 <GlassCard className="p-8 backdrop-blur-xl border-white/10">
-                    <div className="text-center mb-8">
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="text-center mb-8"
+                    >
                         <div className="flex justify-center mb-6"><Logo className="h-12 w-auto" showText={false} /></div>
                         <h1 className="text-3xl font-bold mb-2">Start your 14-day Free Audit</h1>
                         <p className="text-gray-400">No credit card required.</p>
-                    </div>
+                    </motion.div>
 
                     <form onSubmit={handleSignup} className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300">Work Email</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                    placeholder="name@company.com" required />
+                        <motion.div
+                            initial={{ x: 0 }}
+                            animate={shake ? { x: [-10, 10, -10, 10, 0] } : {}}
+                            transition={{ duration: 0.4 }}
+                            className="space-y-4"
+                        >
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300">Work Email</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                                        placeholder="name@company.com" required />
+                                </div>
                             </div>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300">Password</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                                    placeholder="••••••••" required />
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300">Password</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                                        placeholder="Min 12 chars, symbol & number" required />
+                                </div>
+                                {/* Password Strength Indicator */}
+                                {password.length > 0 && (
+                                    <div className="text-xs space-y-1 mt-2 p-3 bg-white/5 rounded-lg border border-white/5">
+                                        <p className="font-semibold text-gray-400 mb-1">Requirements:</p>
+                                        <div className={`flex items-center gap-2 ${password.length >= 12 ? "text-green-400" : "text-gray-500"}`}>
+                                            {password.length >= 12 ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border border-gray-600" />}
+                                            <span>12+ Characters</span>
+                                        </div>
+                                        <div className={`flex items-center gap-2 ${/[a-zA-Z]/.test(password) && /\d/.test(password) ? "text-green-400" : "text-gray-500"}`}>
+                                            {/[a-zA-Z]/.test(password) && /\d/.test(password) ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border border-gray-600" />}
+                                            <span>Letters & Numbers</span>
+                                        </div>
+                                        <div className={`flex items-center gap-2 ${/[&%$#!?¿@]/.test(password) ? "text-green-400" : "text-gray-500"}`}>
+                                            {/[&%$#!?¿@]/.test(password) ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border border-gray-600" />}
+                                            <span>Symbol (&%$#!?¿@)</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                        <Button className="w-full bg-blue-600 hover:bg-blue-500 h-11" disabled={loading}>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300">Confirm Password</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className={`w-full bg-white/5 border rounded-lg py-2.5 pl-10 pr-4 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-all ${confirmPassword && password !== confirmPassword
+                                            ? "border-red-500/50 focus:ring-red-500/20"
+                                            : "border-white/10 focus:ring-blue-500/50"
+                                            }`}
+                                        placeholder="Repeat password" required />
+                                </div>
+                                {confirmPassword && password !== confirmPassword && (
+                                    <p className="text-xs text-red-400 flex items-center gap-1">
+                                        <XCircle className="w-3 h-3" /> Passwords do not match
+                                    </p>
+                                )}
+                            </div>
+                        </motion.div>
+
+                        <Button className="w-full bg-blue-600 hover:bg-blue-500 h-11 shadow-lg shadow-blue-500/25" disabled={loading}>
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Start Free Trial"}
                         </Button>
                     </form>
