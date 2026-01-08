@@ -9,18 +9,22 @@ async function uploadFile(file: File): Promise<string> {
     const filePath = `${fileName}`;
 
     const { error: uploadError } = await supabase.storage
-        .from('documents') // Ensure this bucket exists in your Supabase project
-        .upload(filePath, file);
+        .from('invoices')
+        .upload(filePath, file, { upsert: true });
 
     if (uploadError) {
         throw new Error(`Upload failed: ${uploadError.message}`);
     }
 
-    const { data } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
+    const { data, error } = await supabase.storage
+        .from('invoices')
+        .createSignedUrl(filePath, 60 * 5); // 5 minutes expiry
 
-    return data.publicUrl;
+    if (error) {
+        throw new Error(`Failed to create signed URL: ${error.message}`);
+    }
+
+    return data.signedUrl;
 }
 
 export async function extractContractRules(file: File) {
