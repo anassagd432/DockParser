@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { motion } from "framer-motion";
@@ -6,6 +7,7 @@ import { Logo } from "../components/ui/Logo";
 
 
 export const LandingPage = () => {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const handleCheckout = async () => {
         // User provided a direct Payment Link.
@@ -20,12 +22,16 @@ export const LandingPage = () => {
                     <Link to="/" className="cursor-pointer">
                         <Logo />
                     </Link>
+
+                    {/* Desktop Menu */}
                     <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
                         <a href="#features" className="hover:text-white transition-colors">Features</a>
                         <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
                         <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
                     </div>
-                    <div className="flex items-center gap-4">
+
+                    {/* Desktop Auth */}
+                    <div className="hidden md:flex items-center gap-4">
                         <Link
                             to="/login"
                             className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
@@ -38,7 +44,42 @@ export const LandingPage = () => {
                             </Button>
                         </Link>
                     </div>
+
+                    {/* Mobile Toggle */}
+                    <button className="md:hidden text-gray-400 hover:text-white" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+                        {isMobileMenuOpen ? <XCircle className="w-6 h-6" /> : <div className="space-y-1.5 p-1">
+                            <div className="w-6 h-0.5 bg-current"></div>
+                            <div className="w-6 h-0.5 bg-current"></div>
+                            <div className="w-6 h-0.5 bg-current"></div>
+                        </div>}
+                    </button>
                 </div>
+
+                {/* Mobile Menu Overlay */}
+                {isMobileMenuOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="md:hidden border-t border-white/5 bg-[#0A0C10] px-6 py-4 space-y-4 shadow-2xl"
+                    >
+                        <div className="flex flex-col gap-4 text-sm font-medium text-gray-400">
+                            <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-white py-2 block">Features</a>
+                            <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-white py-2 block">How it Works</a>
+                            <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-white py-2 block">Pricing</a>
+                        </div>
+                        <div className="pt-4 border-t border-white/5 flex flex-col gap-4">
+                            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="w-full text-center py-2 text-gray-300 hover:text-white">
+                                Log In
+                            </Link>
+                            <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                                <Button className="w-full bg-white text-black hover:bg-gray-200 border-none">
+                                    Start Free Trial
+                                </Button>
+                            </Link>
+                        </div>
+                    </motion.div>
+                )}
             </nav>
 
             {/* Hero Section */}
@@ -299,10 +340,7 @@ export const LandingPage = () => {
             <footer className="border-t border-white/5 py-12 bg-[#050608]">
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
                     <div className="mb-4 md:mb-0 flex items-center">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-                            <span className="text-white font-bold text-lg">D</span>
-                        </div>
-                        <span className="font-bold text-white text-lg mr-2">DockParser</span>
+                        <Logo className="h-8 w-8" textClassName="text-lg mr-2" />
                         <span className="border-l border-white/10 pl-2 ml-2">© 2026</span>
                     </div>
                     <div className="flex gap-8">

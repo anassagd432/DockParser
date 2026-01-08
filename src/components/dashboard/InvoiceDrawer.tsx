@@ -65,7 +65,7 @@ export const InvoiceDrawer = ({ invoice, onClose }: InvoiceDrawerProps) => {
                             )}
 
                             {/* Summary Cards */}
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <GlassCard className="p-4">
                                     <p className="text-xs text-gray-400 uppercase">Total Amount</p>
                                     <p className="text-xl font-bold text-white mt-1">
@@ -90,7 +90,7 @@ export const InvoiceDrawer = ({ invoice, onClose }: InvoiceDrawerProps) => {
                             <div>
                                 <h3 className="text-lg font-semibold text-white mb-4">Line Items</h3>
                                 {invoice.extracted_data?.line_items && invoice.extracted_data.line_items.length > 0 ? (
-                                    <div className="rounded-lg border border-white/10 overflow-hidden">
+                                    <div className="rounded-lg border border-white/10 overflow-x-auto">
                                         <table className="w-full text-left text-sm">
                                             <thead className="bg-white/5 text-gray-400">
                                                 <tr>

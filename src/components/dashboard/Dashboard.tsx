@@ -120,25 +120,25 @@ export const Dashboard = () => {
                 onChange={handleFileInputChange}
                 accept=".pdf,.jpg,.jpeg,.png"
             />
-            <header className="flex justify-between items-center">
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div className="flex items-center gap-4">
-                    <Logo className="h-10 w-auto" showText={false} />
+                    <Logo className="h-10 w-10" showText={false} />
                     <div>
-                        <h1 className="text-3xl font-bold text-white tracking-tight">DockParser</h1>
-                        <p className="text-gray-400 mt-1">Turn messy freight bills into Excel in seconds.</p>
+                        <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">DockParser</h1>
+                        <p className="text-gray-400 mt-1 text-sm md:text-base">Turn messy freight bills into Excel in seconds.</p>
                     </div>
                 </div>
-                <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => setIsContractsOpen(true)} className="gap-2">
-                        <FileText className="w-4 h-4" /> Contracts
+                <div className="flex flex-wrap gap-3 w-full md:w-auto">
+                    <Button variant="outline" onClick={() => setIsContractsOpen(true)} className="gap-2 flex-1 md:flex-none">
+                        <FileText className="w-4 h-4" /> <span className="hidden sm:inline">Contracts</span>
                     </Button>
-                    <Button variant="outline" onClick={handleExport} className="gap-2">
-                        <Upload className="w-4 h-4" /> Export CSV
+                    <Button variant="outline" onClick={handleExport} className="gap-2 flex-1 md:flex-none">
+                        <Upload className="w-4 h-4" /> <span className="hidden sm:inline">Export CSV</span><span className="sm:hidden">Export</span>
                     </Button>
-                    <Button className="gap-2" onClick={handleNewInvoiceClick}>
-                        <Plus className="w-4 h-4" /> New Invoice
+                    <Button className="gap-2 flex-1 md:flex-none" onClick={handleNewInvoiceClick}>
+                        <Plus className="w-4 h-4" /> <span className="hidden sm:inline">New Invoice</span><span className="sm:hidden">New</span>
                     </Button>
-                    <div className="w-px h-8 bg-white/10 mx-2" />
+                    <div className="hidden md:block w-px h-8 bg-white/10 mx-2" />
                     <UserMenu />
                 </div>
             </header>

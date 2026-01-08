@@ -8,17 +8,19 @@ interface LogoProps {
     textClassName?: string;
 }
 
-export const Logo = ({ className = "h-8 w-auto", showText = true, showIcon = true, textClassName }: LogoProps) => {
+export const Logo = ({ className = "h-8 w-8", showText = true, showIcon = true, textClassName }: LogoProps) => {
     return (
-        <div className="flex items-center gap-0" aria-label="DockParser">
+        <div className="flex items-center gap-2" aria-label="DockParser">
             {showIcon && (
-                <img
-                    src="https://ik.imagekit.io/2xdpjujefs/logo"
-                    alt="DockParser Logo"
-                    className={className}
-                />
+                <div className={cn("bg-blue-600 rounded-lg flex items-center justify-center shrink-0", className)}>
+                    <span className="text-white font-bold text-xl leading-none">D</span>
+                </div>
             )}
-            {showText && <span className={cn("font-bold text-xl tracking-tight text-white -ml-0.5", textClassName)}>ockParser</span>}
+            {showText && (
+                <span className={cn("font-bold text-xl tracking-tight text-white", textClassName)}>
+                    DockParser
+                </span>
+            )}
         </div>
     );
 };

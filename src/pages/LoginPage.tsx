@@ -51,7 +51,7 @@ export const LoginPage = () => {
 
                 <GlassCard className="p-8 backdrop-blur-xl border-white/10">
                     <div className="text-center mb-8">
-                        <div className="flex justify-center mb-6"><Logo className="h-12 w-auto" showText={false} /></div>
+                        <div className="flex justify-center mb-6"><Logo className="h-12 w-12" showText={false} /></div>
                         <h1 className="text-3xl font-bold mb-2">Log in to DockParser</h1>
                         <p className="text-gray-400">Enter your credentials to access your workspace.</p>
                     </div>

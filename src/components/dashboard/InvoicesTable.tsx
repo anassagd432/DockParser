@@ -91,7 +91,7 @@ export const InvoicesTable = ({ data, onRowClick }: InvoicesTableProps) => {
 
     return (
         <GlassCard className="p-0 overflow-hidden">
-            <div className="p-6 border-b border-white/10 flex justify-between items-center">
+            <div className="p-4 md:p-6 border-b border-white/10 flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-white">Recent Invoices</h3>
                 <span className="text-xs text-slate-400 border border-slate-700/50 bg-slate-800/50 px-2 py-1 rounded">
                     {data.some(i => i.status === "Processing") ? "Processing..." : "Synced"}
@@ -103,7 +103,7 @@ export const InvoicesTable = ({ data, onRowClick }: InvoicesTableProps) => {
                         {table.getHeaderGroups().map(headerGroup => (
                             <tr key={headerGroup.id}>
                                 {headerGroup.headers.map(header => (
-                                    <th key={header.id} className="px-6 py-4 font-medium tracking-wider">
+                                    <th key={header.id} className="px-3 md:px-6 py-3 md:py-4 font-medium tracking-wider">
                                         {header.isPlaceholder
                                             ? null
                                             : flexRender(
@@ -129,7 +129,7 @@ export const InvoicesTable = ({ data, onRowClick }: InvoicesTableProps) => {
                                     )}
                                 >
                                     {row.getVisibleCells().map(cell => (
-                                        <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
+                                        <td key={cell.id} className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
                                             {isProcessing && cell.column.id !== "status" ? (
                                                 <div className="h-4 bg-white/10 rounded w-full animate-pulse" />
                                             ) : (

@@ -87,7 +87,7 @@ export const SignupPage = () => {
                         transition={{ delay: 0.1 }}
                         className="text-center mb-8"
                     >
-                        <div className="flex justify-center mb-6"><Logo className="h-12 w-auto" showText={false} /></div>
+                        <div className="flex justify-center mb-6"><Logo className="h-12 w-12" showText={false} /></div>
                         <h1 className="text-3xl font-bold mb-2">Start your 14-day Free Audit</h1>
                         <p className="text-gray-400">No credit card required.</p>
                     </motion.div>

@@ -85,7 +85,8 @@ export const UploadZone = ({ onFileSelect, isUploading }: UploadZoneProps) => {
                         {isUploading ? "Processing with Gemini..." : isDragging ? "Drop invoice here" : "Upload Invoice"}
                     </p>
                     <p className="text-sm text-gray-400 mt-1">
-                        Drag & drop or click to browse
+                        <span className="hidden md:inline">Drag & drop or click to browse</span>
+                        <span className="md:hidden">Tap to upload invoice</span>
                     </p>
                 </div>
             </motion.div>
