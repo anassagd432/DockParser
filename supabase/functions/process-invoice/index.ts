@@ -4,11 +4,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 }
 
 Deno.serve(async (req) => {
-    // Handle CORS preflight requests
+    // 1. Handle CORS Preflight Request
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
 
         if (!supabaseUrl || !supabaseKey) {
             console.error('Missing Supabase Environment Variables');
-            throw new Error('Server usage configuration error.');
+            throw new Error('Server usage configuration error: Missing Supabase URL or Key.');
         }
 
         const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -34,11 +34,16 @@ Deno.serve(async (req) => {
         });
 
         // 1. Get User from Auth Header
-        const authHeader = req.headers.get('Authorization')!
+        const authHeader = req.headers.get('Authorization')
+        if (!authHeader) {
+            throw new Error('Missing Authorization header');
+        }
+
         const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
 
         if (userError || !user) {
-            throw new Error('Unauthorized')
+            console.error("Auth Error:", userError);
+            throw new Error('Unauthorized: Invalid Token');
         }
 
         // 2. RATE LIMITING CHECK
@@ -88,11 +93,6 @@ Deno.serve(async (req) => {
         }
 
         // 4. Download file
-        // NOTE: If the bucket is private, we need a signed URL or service role.
-        // Assuming fileUrl is a signed URL or publicly accessible for this MVP step.
-        // If it's a path like "invoices/123.pdf", we would need to construct the URL or use supabaseAdmin.
-        // For this implementation, we expect a full download URL (likely a signed URL generated on frontend).
-
         console.log("Downloading file from:", fileUrl);
         const fileResponse = await fetch(fileUrl);
         if (!fileResponse.ok) {
@@ -105,8 +105,7 @@ Deno.serve(async (req) => {
 
         // 5. Setup Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
-        // Using gemini-1.5-flash as it is generally faster/cheaper, or use "gemini-3-pro-preview" matching existing code if preferred.
-        // Existing code uses "gemini-3-pro-preview". I will use gemini-1.5-flash for efficiency unless strict reason not to.
+
         // Using gemini-2.5-flash as requested.
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
@@ -174,9 +173,12 @@ Deno.serve(async (req) => {
             status: 200,
         })
 
-    } catch (error) {
+    } catch (error: any) {
+        console.error("Edge Function Error:", error);
         return new Response(JSON.stringify({ error: error.message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            // Status 400 with headers ensures the client can read the error message.
+            // A 500 without headers would result in a CORS error masking the real issue.
             status: 400,
         })
     }
