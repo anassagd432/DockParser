@@ -26,6 +26,7 @@ export async function processInvoice(file: File): Promise<Invoice> {
     const { data: contracts } = await supabase
         .from('contracts')
         .select('vendor_name, extracted_rules') // Only need metadata
+        .eq('user_id', user.id)
         .not('extracted_rules', 'is', null);
 
     // 3. Call Gemini for Extraction & Auditing
