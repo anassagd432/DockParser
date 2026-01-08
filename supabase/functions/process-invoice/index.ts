@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
 
             await supabaseAdmin.from('ai_usage_logs').insert({
                 user_id: userId,
-                model: 'gemini-2.5-flash',
+                model: 'gemini-1.5-flash',
                 action: type || 'invoice'
             });
         }
@@ -98,7 +98,8 @@ Deno.serve(async (req: Request) => {
             ? `Analyze this document image. Extract the vendor name and pricing rules. Return ONLY valid JSON in this exact format: {"vendor_name":"Company Name","rules":[{"item_description":"Description","agreed_price":"$X.XX","condition":"any conditions"}]}. Do not include markdown or explanation.`
             : `Analyze this invoice image. Extract all data. Return ONLY valid JSON in this exact format: {"vendor":"Company Name","invoice_date":"YYYY-MM-DD","total_amount":0.00,"currency":"USD","confidence":0.95,"line_items":[{"description":"Item","qty":1,"unit_price":0.00,"total":0.00}],"audit_flags":[]}. Do not include markdown or explanation.`;
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+        // MODEL: gemini-1.5-flash
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
 
         const geminiPayload = {
             contents: [{
