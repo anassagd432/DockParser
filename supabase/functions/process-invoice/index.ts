@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
                 vendor: parsedData.vendor_name || 'Unknown',
                 date: parsedData.date || new Date().toISOString(),
                 raw_data: parsedData,
-                status: 'Pending'
+                status: 'Review'
             })
             .select()
             .single()
