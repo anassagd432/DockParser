@@ -74,7 +74,7 @@ export async function extractInvoiceData(filePath: string, _knownContracts?: any
         if (error) throw error;
 
         // The Edge Function returns the parsed JSON directly
-        return data;
+        return resultData;
 
     } catch (error) {
         console.error("Gemini Extraction Failed:", error);
