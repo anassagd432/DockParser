@@ -1,5 +1,4 @@
-// Use native Deno.serve - no imports needed for server
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0"
+// NO SDK IMPORTS - Using raw fetch to avoid runtime crashes
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1"
 
 // CORS Headers
@@ -10,7 +9,9 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req: Request) => {
-    // Handle OPTIONS preflight FIRST
+    // ============================================
+    // CRITICAL: Handle OPTIONS preflight FIRST
+    // ============================================
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
@@ -71,36 +72,74 @@ Deno.serve(async (req: Request) => {
 
             await supabaseAdmin.from('ai_usage_logs').insert({
                 user_id: userId,
-                model: 'gemini-1.5-flash',
+                model: 'gemini-2.5-flash',
                 action: type || 'invoice'
             });
         }
 
-        // Download File
+        // ============================================
+        // Download File and Convert to Base64
+        // ============================================
         console.log('[process-invoice] Downloading file...');
         const fileRes = await fetch(fileUrl);
         if (!fileRes.ok) throw new Error(`Download failed: ${fileRes.status}`);
 
         const blob = await fileRes.blob();
+        const mimeType = blob.type || 'image/png';
         const buffer = await blob.arrayBuffer();
         const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-        // Gemini API Call
-        console.log('[process-invoice] Calling Gemini...');
-        const genAI = new GoogleGenerativeAI(geminiApiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        console.log(`[process-invoice] File downloaded: ${mimeType}, ${buffer.byteLength} bytes`);
 
+        // ============================================
+        // RAW FETCH to Gemini API (No SDK)
+        // ============================================
         const prompt = type === 'contract'
-            ? `Extract vendor name and pricing rules as JSON: {"vendor_name":"...","rules":[{"item_description":"...","agreed_price":"..."}]}`
-            : `Extract invoice data as JSON: {"vendor":"...","invoice_date":"YYYY-MM-DD","total_amount":0,"currency":"USD","confidence":0.9,"line_items":[],"audit_flags":[]}`;
+            ? `Analyze this document image. Extract the vendor name and pricing rules. Return ONLY valid JSON in this exact format: {"vendor_name":"Company Name","rules":[{"item_description":"Description","agreed_price":"$X.XX","condition":"any conditions"}]}. Do not include markdown or explanation.`
+            : `Analyze this invoice image. Extract all data. Return ONLY valid JSON in this exact format: {"vendor":"Company Name","invoice_date":"YYYY-MM-DD","total_amount":0.00,"currency":"USD","confidence":0.95,"line_items":[{"description":"Item","qty":1,"unit_price":0.00,"total":0.00}],"audit_flags":[]}. Do not include markdown or explanation.`;
 
-        const result = await model.generateContent([
-            prompt,
-            { inlineData: { data: base64, mimeType: blob.type || 'image/png' } }
-        ]);
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
 
-        const text = (await result.response).text();
-        const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const geminiPayload = {
+            contents: [{
+                parts: [
+                    { text: prompt },
+                    {
+                        inline_data: {
+                            mime_type: mimeType,
+                            data: base64
+                        }
+                    }
+                ]
+            }]
+        };
+
+        console.log('[process-invoice] Calling Gemini API via raw fetch...');
+
+        const geminiRes = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(geminiPayload)
+        });
+
+        if (!geminiRes.ok) {
+            const errorText = await geminiRes.text();
+            console.error('[process-invoice] Gemini API error:', errorText);
+            throw new Error(`Gemini API error: ${geminiRes.status} - ${errorText}`);
+        }
+
+        const geminiData = await geminiRes.json();
+        console.log('[process-invoice] Gemini response received');
+
+        // Extract text from response
+        const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        if (!responseText) {
+            throw new Error('No response from Gemini');
+        }
+
+        // Clean and parse JSON
+        const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
         const data = JSON.parse(cleaned);
 
         console.log('[process-invoice] Success!');
