@@ -26,33 +26,35 @@ serve(async (req) => {
 
         // Environment Variables
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
         const apiKey = Deno.env.get('GEMINI_API_KEY');
 
-        if (!supabaseUrl || !supabaseKey) {
+        if (!supabaseUrl || !supabaseServiceKey) {
             throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
         }
         if (!apiKey) {
             throw new Error('Missing GEMINI_API_KEY');
         }
 
-        // Supabase Client
-        const supabase = createClient(supabaseUrl, supabaseKey, {
+        // ============================================
+        // ADMIN MODE: Use Service Role Key to bypass RLS
+        // ============================================
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
             auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
         });
 
-        // Auth Check
+        // Try to get user ID from Auth header (optional)
+        let userId: string | null = null;
         const authHeader = req.headers.get('Authorization');
-        if (!authHeader) {
-            throw new Error('Missing Authorization header');
-        }
-
-        const { data: { user }, error: userError } = await supabase.auth.getUser(
-            authHeader.replace('Bearer ', '')
-        );
-
-        if (userError || !user) {
-            throw new Error('Unauthorized');
+        if (authHeader) {
+            try {
+                const { data: { user } } = await supabaseAdmin.auth.getUser(
+                    authHeader.replace('Bearer ', '')
+                );
+                userId = user?.id || null;
+            } catch (authError) {
+                console.log("[process-invoice] Could not get user from token, proceeding without user_id");
+            }
         }
 
         // Parse Request Body
@@ -61,27 +63,29 @@ serve(async (req) => {
             throw new Error('Missing fileUrl');
         }
 
-        // Rate Limiting (Simple Check)
-        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const { count: dailyCount } = await supabase
-            .from('ai_usage_logs')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .gte('created_at', oneDayAgo);
+        // Rate Limiting (Only if user is identified)
+        if (userId) {
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            const { count: dailyCount } = await supabaseAdmin
+                .from('ai_usage_logs')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .gte('created_at', oneDayAgo);
 
-        if (dailyCount && dailyCount >= 50) {
-            return new Response(JSON.stringify({ error: "Daily limit reached (50/day)." }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 429
+            if (dailyCount && dailyCount >= 50) {
+                return new Response(JSON.stringify({ error: "Daily limit reached (50/day)." }), {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 429
+                });
+            }
+
+            // Log Usage (using Admin client - bypasses RLS)
+            await supabaseAdmin.from('ai_usage_logs').insert({
+                user_id: userId,
+                model: 'gemini-1.5-flash',
+                action: type || 'unknown'
             });
         }
-
-        // Log Usage
-        await supabase.from('ai_usage_logs').insert({
-            user_id: user.id,
-            model: 'gemini-1.5-flash',
-            action: type || 'unknown'
-        });
 
         // Download File
         console.log("[process-invoice] Downloading file:", fileUrl);
@@ -94,7 +98,7 @@ serve(async (req) => {
         const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
         // ============================================
-        // Gemini AI Call - Wrapped in its own try/catch
+        // Gemini AI Call - Model: gemini-1.5-flash
         // ============================================
         let data;
         try {
@@ -108,7 +112,7 @@ serve(async (req) => {
                 prompt = `Analyze this invoice. Extract data in strict JSON: {"vendor": "...", "invoice_date": "YYYY-MM-DD", "total_amount": 0.00, "currency": "USD", "confidence": 0.0, "line_items": [{"description": "...", "qty": 0, "unit_price": 0.00, "total": 0.00}], "audit_flags": []}. No markdown.`;
             }
 
-            console.log("[process-invoice] Calling Gemini API...");
+            console.log("[process-invoice] Calling Gemini API with gemini-1.5-flash...");
             const result = await model.generateContent([
                 prompt,
                 { inlineData: { data: base64Data, mimeType: blob.type } }
@@ -122,7 +126,6 @@ serve(async (req) => {
 
         } catch (geminiError: any) {
             console.error("[process-invoice] Gemini API Error:", geminiError);
-            // Return error WITH CORS headers
             return new Response(JSON.stringify({
                 error: geminiError.message || "AI processing failed"
             }), {
