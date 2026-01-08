@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Mail, Lock, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Logo } from "../components/ui/Logo";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 export const SignupPage = () => {
     const [loading, setLoading] = useState(false);
