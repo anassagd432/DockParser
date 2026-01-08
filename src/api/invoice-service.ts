@@ -34,7 +34,7 @@ export async function processInvoice(file: File): Promise<Invoice> {
     let extractedData;
     try {
         // Pass the list of contracts as context
-        extractedData = await extractInvoiceData(file, contracts || []);
+        extractedData = await extractInvoiceData(filePath, contracts || []);
         console.log("Gemini Extracted:", JSON.stringify(extractedData, null, 2));
     } catch (err) {
         console.error("AI Extraction failed, falling back to basic data", err);

@@ -49,22 +49,25 @@ export async function extractContractRules(file: File) {
     }
 }
 
-export async function extractInvoiceData(file: File, _knownContracts?: any[]) {
+export async function extractInvoiceData(filePath: string, _knownContracts?: any[]) {
     try {
-        console.log("Uploading file for invoice extraction...");
-        const fileUrl = await uploadFile(file);
+        console.log("Generating signed URL for invoice extraction...");
 
-        // Note: passing knownContracts logic is moved to backend or simplified here.
-        // The current Edge Function doesn't explicitly handle knownContracts in the prompt construction in the initial version.
-        // To strictly follow the "Secure Backend" task, we should pass context if needed, but the prompt in Task 1 was simplified.
-        // For now, we will just pass the fileUrl. If advanced audit logic is needed, it should be in the Edge Function.
+        const { data, error: signedUrlError } = await supabase.storage
+            .from('invoices')
+            .createSignedUrl(filePath, 60 * 5); // 5 minutes expiry
+
+        if (signedUrlError) {
+            throw new Error(`Failed to create signed URL: ${signedUrlError.message}`);
+        }
+
+        const fileUrl = data.signedUrl;
 
         console.log("Invoking Edge Function 'process-invoice' (type: invoice)...");
-        const { data, error } = await supabase.functions.invoke('process-invoice', {
+        const { data: resultData, error } = await supabase.functions.invoke('process-invoice', {
             body: {
                 fileUrl,
                 type: 'invoice',
-                // knownContracts // Potentially pass this if the backend is updated to handle it.
             }
         });
 
