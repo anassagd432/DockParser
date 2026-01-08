@@ -3,6 +3,7 @@ import { supabase } from "./lib/supabase";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { Dashboard } from "./components/dashboard/Dashboard";
+import { SettingsPage } from "./pages/SettingsPage";
 import { LandingPage } from "./pages/LandingPage";
 import { ContactPage } from "./pages/ContactPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
@@ -67,7 +68,7 @@ function App() {
             path="/dashboard"
             element={session ? <Dashboard /> : <Navigate to="/login" replace />}
           />
-          <Route path="/settings" element={session ? <PlaceholderPage title="Settings" /> : <Navigate to="/login" replace />} />
+          <Route path="/settings" element={session ? <SettingsPage /> : <Navigate to="/login" replace />} />
           <Route path="/billing" element={session ? <PlaceholderPage title="Billing" /> : <Navigate to="/login" replace />} />
 
           {/* Catch all */}
