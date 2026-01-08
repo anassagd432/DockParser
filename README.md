@@ -2,6 +2,8 @@
 
 **DockParser** is an AI-Native document processing engine that leverages multimodal LLMs to transform unstructured PDF/Image data into strictly typed JSON schemas. Architected for high-velocity deployment using Supabase Edge Functions and Google Gemini 3.0 Pro.
 
+> **Note:** The live public demo is currently optimized to run on **Gemini 2.5 Flash** to maintain free-tier availability. The core architecture is natively designed for **Gemini 3.0 Pro** for production-grade enterprise payloads.
+
 ---
 
 ## ⚡ Development Velocity Metrics (AI-Native Engineering)
