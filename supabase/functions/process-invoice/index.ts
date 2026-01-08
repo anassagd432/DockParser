@@ -1,159 +1,108 @@
-// NO SDK IMPORTS - Using raw fetch to avoid runtime crashes
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1"
+// removed the bad "shim" import causing the stack overflow
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// CORS Headers
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 }
 
-Deno.serve(async (req: Request) => {
-    // ============================================
-    // CRITICAL: Handle OPTIONS preflight FIRST
-    // ============================================
+Deno.serve(async (req) => {
+    // 1. Handle CORS Preflight (OPTIONS)
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
 
     try {
-        console.log(`[process-invoice] ${req.method} request received`);
+        // 2. Setup Admin Client (Bypasses RLS)
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-        // Environment Variables
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-        const apiKey = Deno.env.get('GEMINI_API_KEY') || '';
-
-        if (!supabaseUrl || !supabaseServiceKey) {
-            throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-        }
-        if (!apiKey) {
-            throw new Error('Missing GEMINI_API_KEY');
+        if (!serviceRoleKey) {
+            throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY')
         }
 
-        // Admin Supabase Client (bypasses RLS)
-        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+        const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-        // Soft Auth Check
-        let userId: string | null = null;
-        const authHeader = req.headers.get('Authorization');
-        if (authHeader?.startsWith('Bearer ')) {
-            try {
-                const { data: { user } } = await supabaseAdmin.auth.getUser(
-                    authHeader.replace('Bearer ', '')
-                );
-                userId = user?.id || null;
-            } catch { /* ignore auth errors */ }
+        // 3. Get the File & User
+        const formData = await req.formData()
+        const file = formData.get('file')
+
+        if (!file || !(file instanceof File)) {
+            throw new Error('No file uploaded')
         }
 
-        // Parse Body
-        const { fileUrl, type } = await req.json();
-        if (!fileUrl) {
-            throw new Error('Missing fileUrl');
+        // Try to get user ID (soft fail if anonymous)
+        let userId = null
+        const authHeader = req.headers.get('Authorization')
+        if (authHeader) {
+            const token = authHeader.replace('Bearer ', '')
+            const { data: { user } } = await supabase.auth.getUser(token)
+            userId = user?.id || null
         }
 
-        console.log(`[process-invoice] Type: ${type}, User: ${userId || 'anonymous'}`);
+        // 4. Prepare Image for Gemini
+        const arrayBuffer = await file.arrayBuffer()
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
 
-        // Rate Limiting (if user identified)
-        if (userId) {
-            const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
-            const { count } = await supabaseAdmin
-                .from('ai_usage_logs')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId)
-                .gte('created_at', oneDayAgo);
+        // 5. Call Gemini API (Raw Fetch)
+        const apiKey = Deno.env.get('GEMINI_API_KEY')
+        if (!apiKey) throw new Error('Missing GEMINI_API_KEY secret')
 
-            if (count && count >= 50) {
-                return new Response(JSON.stringify({ error: "Daily limit reached" }), {
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    status: 429
-                });
-            }
-
-            await supabaseAdmin.from('ai_usage_logs').insert({
-                user_id: userId,
-                model: 'gemini-1.5-flash',
-                action: type || 'invoice'
-            });
-        }
-
-        // ============================================
-        // Download File and Convert to Base64
-        // ============================================
-        console.log('[process-invoice] Downloading file...');
-        const fileRes = await fetch(fileUrl);
-        if (!fileRes.ok) throw new Error(`Download failed: ${fileRes.status}`);
-
-        const blob = await fileRes.blob();
-        const mimeType = blob.type || 'image/png';
-        const buffer = await blob.arrayBuffer();
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-
-        console.log(`[process-invoice] File downloaded: ${mimeType}, ${buffer.byteLength} bytes`);
-
-        // ============================================
-        // RAW FETCH to Gemini API (No SDK)
-        // ============================================
-        const prompt = type === 'contract'
-            ? `Analyze this document image. Extract the vendor name and pricing rules. Return ONLY valid JSON in this exact format: {"vendor_name":"Company Name","rules":[{"item_description":"Description","agreed_price":"$X.XX","condition":"any conditions"}]}. Do not include markdown or explanation.`
-            : `Analyze this invoice image. Extract all data. Return ONLY valid JSON in this exact format: {"vendor":"Company Name","invoice_date":"YYYY-MM-DD","total_amount":0.00,"currency":"USD","confidence":0.95,"line_items":[{"description":"Item","qty":1,"unit_price":0.00,"total":0.00}],"audit_flags":[]}. Do not include markdown or explanation.`;
-
-        // MODEL: gemini-1.5-flash
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
 
         const geminiPayload = {
             contents: [{
                 parts: [
-                    { text: prompt },
-                    {
-                        inline_data: {
-                            mime_type: mimeType,
-                            data: base64
-                        }
-                    }
+                    { text: "Extract these fields from the invoice: total_amount (number), vendor_name (string), date (YYYY-MM-DD), line_items (array of objects). Return PURE JSON only. Do not wrap in markdown blocks." },
+                    { inline_data: { mime_type: file.type, data: base64 } }
                 ]
-            }]
-        };
-
-        console.log('[process-invoice] Calling Gemini API via raw fetch...');
+            }],
+            generationConfig: { response_mime_type: "application/json" }
+        }
 
         const geminiRes = await fetch(geminiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(geminiPayload)
-        });
+        })
 
         if (!geminiRes.ok) {
-            const errorText = await geminiRes.text();
-            console.error('[process-invoice] Gemini API error:', errorText);
-            throw new Error(`Gemini API error: ${geminiRes.status} - ${errorText}`);
+            const errorText = await geminiRes.text()
+            throw new Error(`Gemini API Error ${geminiRes.status}: ${errorText}`)
         }
 
-        const geminiData = await geminiRes.json();
-        console.log('[process-invoice] Gemini response received');
+        const geminiData = await geminiRes.json()
+        const extractedText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
 
-        // Extract text from response
-        const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (!extractedText) throw new Error('Gemini returned no text')
 
-        if (!responseText) {
-            throw new Error('No response from Gemini');
-        }
+        const parsedData = JSON.parse(extractedText)
 
-        // Clean and parse JSON
-        const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const data = JSON.parse(cleaned);
+        // 6. Save to Database
+        const { data: insertedData, error: dbError } = await supabase
+            .from('invoices')
+            .insert({
+                user_id: userId,
+                total: parsedData.total_amount || 0,
+                vendor: parsedData.vendor_name || 'Unknown',
+                date: parsedData.date || new Date().toISOString(),
+                raw_data: parsedData
+            })
+            .select()
+            .single()
 
-        console.log('[process-invoice] Success!');
-        return new Response(JSON.stringify(data), {
+        if (dbError) throw new Error(`Database Error: ${dbError.message}`)
+
+        return new Response(JSON.stringify(insertedData), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200
-        });
+            status: 200,
+        })
 
-    } catch (err: any) {
-        console.error('[process-invoice] Error:', err.message);
-        return new Response(JSON.stringify({ error: err.message }), {
+    } catch (error) {
+        // Return the actual error message so we can see it in the frontend
+        return new Response(JSON.stringify({ error: error.message || 'Unknown Error' }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500
-        });
+            status: 500,
+        })
     }
 })
