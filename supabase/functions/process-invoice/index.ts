@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -12,8 +13,55 @@ serve(async (req) => {
     }
 
     try {
+        // 0. Initialize Supabase Client to check Auth & Rate Limits
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
+        // 1. Get User from Auth Header
+        const authHeader = req.headers.get('Authorization')!
+        const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
+
+        if (userError || !user) {
+            throw new Error('Unauthorized')
+        }
+
+        // 2. RATE LIMITING CHECK
+        const now = new Date();
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+        const oneMinuteAgo = new Date(now.getTime() - 60 * 1000).toISOString();
+
+        // Check Daily Limit (e.g., 50 per day)
+        const { count: dailyCount, error: dailyError } = await supabase
+            .from('ai_usage_logs')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .gte('created_at', oneDayAgo);
+
+        if (dailyCount && dailyCount >= 50) {
+            throw new Error('Daily limit reached (50 requests/day). Please try again tomorrow.');
+        }
+
+        // Check Burst Limit (e.g., 10 per minute)
+        const { count: burstCount, error: burstError } = await supabase
+            .from('ai_usage_logs')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .gte('created_at', oneMinuteAgo);
+
+        if (burstCount && burstCount >= 10) {
+            throw new Error('Too many requests. Please wait a moment.');
+        }
+
         const { fileUrl, type } = await req.json()
         // type can be 'invoice' or 'contract'
+
+        // 3. Log this request
+        await supabase.from('ai_usage_logs').insert({
+            user_id: user.id,
+            model: 'gemini-2.5-flash',
+            action: type || 'unknown'
+        });
 
         if (!fileUrl) {
             throw new Error('Missing fileUrl')
@@ -24,7 +72,7 @@ serve(async (req) => {
             throw new Error('Missing GEMINI_API_KEY')
         }
 
-        // 1. Download file from Supabase Storage
+        // 4. Download file
         // NOTE: If the bucket is private, we need a signed URL or service role.
         // Assuming fileUrl is a signed URL or publicly accessible for this MVP step.
         // If it's a path like "invoices/123.pdf", we would need to construct the URL or use supabaseAdmin.
@@ -40,15 +88,14 @@ serve(async (req) => {
         const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
         const mimeType = blob.type;
 
-        // 2. Setup Gemini
+        // 5. Setup Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
         // Using gemini-1.5-flash as it is generally faster/cheaper, or use "gemini-3-pro-preview" matching existing code if preferred.
-        // Existing code uses "gemini-3-pro-preview". Let's stick to a known stable or the requested one. 
-        // The user existing code uses "gemini-3-pro-preview". I will use gemini-1.5-flash for efficiency unless strict reason not to.
+        // Existing code uses "gemini-3-pro-preview". I will use gemini-1.5-flash for efficiency unless strict reason not to.
         // Using gemini-2.5-flash as requested.
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        // 3. Construct Prompt
+        // 6. Construct Prompt
         let prompt = "";
         if (type === 'contract') {
             prompt = `
