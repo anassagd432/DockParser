@@ -31,57 +31,71 @@ export async function processInvoice(file: File): Promise<Invoice> {
 
     // 3. Call Gemini for Extraction & Auditing
     console.log("Calling Gemini 3.0 Pro (Auditing Mode)...");
-    let extractedData;
+    let insertedInvoice;
+
     try {
-        // Pass the list of contracts as context
-        extractedData = await extractInvoiceData(filePath, contracts || []);
-        console.log("Gemini Extracted:", JSON.stringify(extractedData, null, 2));
+        // Pass the file directly to the Edge Function (which handles insertion)
+        // Note: Contracts logic was removed from Edge Function for now
+        insertedInvoice = await extractInvoiceData(file);
+
+        console.log("Edge Function Inserted Invoice:", insertedInvoice);
+
+        // 4. Update the record with File Metadata (Url & Filename)
+        // The Edge Function creates the record but doesn't know the storage path
+        const { error: updateError } = await supabase
+            .from('invoices')
+            .update({
+                file_url: filePath,
+                filename: file.name
+            })
+            .eq('id', insertedInvoice.id);
+
+        if (updateError) {
+            console.error("Failed to update file metadata:", updateError);
+            // Continue anyway, we have the record
+        }
+
+        // Merge metadata for return
+        insertedInvoice.file_url = filePath;
+        insertedInvoice.filename = file.name;
+
     } catch (err) {
-        console.error("AI Extraction failed, falling back to basic data", err);
-        // Fallback or rethrow? For now fallback to ensure upload persists
-        extractedData = {
-            vendor: "Unknown (Extraction Failed)",
-            invoice_date: new Date().toISOString().split('T')[0],
-            total_amount: 0,
-            currency: "USD",
-            confidence: 0,
-            audit_flags: []
-        };
+        console.error("AI Extraction/Insertion failed, falling back to manual insert", err);
+
+        // Fallback: If Edge Function failed, we manually insert a basic record
+        // allowing the user to at least see their uploaded file
+        const { data, error } = await supabase
+            .from('invoices')
+            .insert({
+                user_id: user.id,
+                filename: file.name,
+                vendor: "Unknown (Extraction Failed)",
+                invoice_date: new Date().toISOString().split('T')[0],
+                total_amount: 0,
+                currency: "USD",
+                status: "Review",
+                confidence: 0,
+                extracted_data: {},
+                file_url: filePath,
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Database insert failed:", JSON.stringify(error, null, 2));
+            throw error;
+        }
+        insertedInvoice = data;
     }
 
-    // 3. Insert into Supabase Database
-    console.log('Uploading file:', file.name);
-
-    const { data, error } = await supabase
-        .from('invoices')
-        .insert({
-            user_id: user.id,
-            filename: file.name,
-            vendor: extractedData.vendor,
-            invoice_date: extractedData.invoice_date,
-            total_amount: extractedData.total_amount,
-            currency: extractedData.currency || "USD",
-            status: extractedData.confidence > 0.8 ? "Approved" : "Review",
-            confidence: extractedData.confidence,
-            extracted_data: extractedData, // Store full JSON including line items
-            file_url: filePath,
-        })
-        .select()
-        .single();
-
-    if (error) {
-        console.error("Database insert failed:", JSON.stringify(error, null, 2)); // Stringify to see the actual error message
-        throw error;
-    }
-
-    // Return the inserted invoice
+    // Return the invoice (mapped to Interface)
     return {
-        id: data.id,
-        vendor: data.vendor,
-        invoice_date: data.invoice_date,
-        total_amount: data.total_amount,
-        currency: data.currency,
-        status: data.status,
-        confidence: data.confidence
+        id: insertedInvoice.id,
+        vendor: insertedInvoice.vendor,
+        invoice_date: insertedInvoice.invoice_date,
+        total_amount: insertedInvoice.total_amount,
+        currency: insertedInvoice.currency,
+        status: insertedInvoice.status,
+        confidence: insertedInvoice.confidence
     };
 }

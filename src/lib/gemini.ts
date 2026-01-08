@@ -49,31 +49,25 @@ export async function extractContractRules(file: File) {
     }
 }
 
-export async function extractInvoiceData(filePath: string, _knownContracts?: any[]) {
+export async function extractInvoiceData(file: File) {
     try {
-        console.log("Generating signed URL for invoice extraction...");
-
-        const { data, error: signedUrlError } = await supabase.storage
-            .from('invoices')
-            .createSignedUrl(filePath, 60 * 5); // 5 minutes expiry
-
-        if (signedUrlError) {
-            throw new Error(`Failed to create signed URL: ${signedUrlError.message}`);
-        }
-
-        const fileUrl = data.signedUrl;
-
         console.log("Invoking Edge Function 'process-invoice' (type: invoice)...");
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'invoice');
+
         const { data: resultData, error } = await supabase.functions.invoke('process-invoice', {
-            body: {
-                fileUrl,
-                type: 'invoice',
-            }
+            body: formData,
+            // ✅ Do not set Content-Type. The browser will add it + the boundary automatically.
         });
 
-        if (error) throw error;
+        if (error) {
+            // Log the full error object for debugging
+            console.error("Edge Function Error Details:", error);
+            throw error;
+        }
 
-        // The Edge Function returns the parsed JSON directly
         return resultData;
 
     } catch (error) {
