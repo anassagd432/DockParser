@@ -11,7 +11,7 @@ This codebase is an example of **High-Velocity AI-Native Engineering**. By orche
 * **Equivalent Effort:** ~4 Human Work Years compressed into a single development sprint.
 * **Architecture:** Iterative design using automated refactoring loops and architectural stress-testing.
 
-![OpenRouter Telemetry](<C:\Users\anass\Documents\GitHub\DockParser\public\Screenshot 2025-12-26 011520.png>)
+![OpenRouter Telemetry](public/Screenshot%202025-12-26%20011520.png)
 
 ---
 
