@@ -45,7 +45,8 @@ serve(async (req) => {
         // Using gemini-1.5-flash as it is generally faster/cheaper, or use "gemini-3-pro-preview" matching existing code if preferred.
         // Existing code uses "gemini-3-pro-preview". Let's stick to a known stable or the requested one. 
         // The user existing code uses "gemini-3-pro-preview". I will use gemini-1.5-flash for efficiency unless strict reason not to.
-        const model = genAI.getGenerativeModel({ model: "gemini-3.0-pro" });
+        // Using gemini-2.5-flash as requested.
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         // 3. Construct Prompt
         let prompt = "";
