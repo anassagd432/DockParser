@@ -4,6 +4,7 @@ import { Button } from "../components/ui/Button";
 import { motion } from "framer-motion";
 import { Check, Upload, Brain, FileSpreadsheet, ArrowRight, Zap, XCircle, CheckCircle2 } from "lucide-react";
 import { Logo } from "../components/ui/Logo";
+import { AnimatedBackground } from "../components/ui/AnimatedBackground";
 
 
 export const LandingPage = () => {
@@ -15,7 +16,8 @@ export const LandingPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#0A0C10] text-white selection:bg-blue-500/30">
+        <div className="min-h-screen bg-[#0A0C10] text-white selection:bg-blue-500/30 relative">
+            <AnimatedBackground />
             {/* Navbar */}
             <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-[#0A0C10]/80 backdrop-blur-xl">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -94,7 +96,7 @@ export const LandingPage = () => {
                         transition={{ duration: 0.5 }}
                     >
                         <span className="inline-block px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-6 uppercase tracking-wider">
-                            Now with Gemini 3.0 Pro Intelligence
+                            Now with Gemini 2.5 Flash Intelligence
                         </span>
                         <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
                             Stop Overpaying for Freight. <br />
@@ -197,7 +199,7 @@ export const LandingPage = () => {
 
                         {[
                             { icon: Upload, title: "Upload Invoices", desc: "Drag & drop PDF invoices or rate cards directly into the dashboard." },
-                            { icon: Brain, title: "AI Analysis", desc: "Gemini 3.0 Pro extracts line items and cross-references them against your contracts." },
+                            { icon: Brain, title: "AI Analysis", desc: "Gemini 2.5 Flash extracts line items and cross-references them against your contracts." },
                             { icon: FileSpreadsheet, title: "Export Results", desc: "Download clean, audited data in CSV format ready for your ERP or Excel." }
                         ].map((step, i) => (
                             <motion.div
