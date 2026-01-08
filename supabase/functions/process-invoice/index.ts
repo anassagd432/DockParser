@@ -1,5 +1,5 @@
-// removed the bad "shim" import causing the stack overflow
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { encodeBase64 } from 'https://deno.land/std@0.224.0/encoding/base64.ts'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -13,17 +13,15 @@ Deno.serve(async (req) => {
     }
 
     try {
-        // 2. Setup Admin Client (Bypasses RLS)
+        // 2. Setup Admin Client
         const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
         const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-        if (!serviceRoleKey) {
-            throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY')
-        }
+        if (!serviceRoleKey) throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY')
 
         const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-        // 3. Get the File & User
+        // 3. Get the File
         const formData = await req.formData()
         const file = formData.get('file')
 
@@ -31,7 +29,7 @@ Deno.serve(async (req) => {
             throw new Error('No file uploaded')
         }
 
-        // Try to get user ID (soft fail if anonymous)
+        // Get User ID (Optional)
         let userId = null
         const authHeader = req.headers.get('Authorization')
         if (authHeader) {
@@ -40,31 +38,33 @@ Deno.serve(async (req) => {
             userId = user?.id || null
         }
 
-        // 4. Prepare Image for Gemini
+        // 4. Prepare Image for Gemini (SAFE METHOD)
+        // We use the standard library 'encodeBase64' to handle large files without crashing
         const arrayBuffer = await file.arrayBuffer()
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+        const base64 = encodeBase64(arrayBuffer)
 
-        // 5. Call Gemini API (Raw Fetch)
+        // 5. Call Gemini API
         const apiKey = Deno.env.get('GEMINI_API_KEY')
         if (!apiKey) throw new Error('Missing GEMINI_API_KEY secret')
-
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
 
         const geminiPayload = {
             contents: [{
                 parts: [
-                    { text: "Extract these fields from the invoice: total_amount (number), vendor_name (string), date (YYYY-MM-DD), line_items (array of objects). Return PURE JSON only. Do not wrap in markdown blocks." },
+                    { text: "Extract these fields from the invoice: total_amount (number), vendor_name (string), date (YYYY-MM-DD), line_items (array of objects). Return valid JSON only." },
                     { inline_data: { mime_type: file.type, data: base64 } }
                 ]
             }],
             generationConfig: { response_mime_type: "application/json" }
         }
 
-        const geminiRes = await fetch(geminiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(geminiPayload)
-        })
+        const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(geminiPayload)
+            }
+        )
 
         if (!geminiRes.ok) {
             const errorText = await geminiRes.text()
@@ -99,8 +99,8 @@ Deno.serve(async (req) => {
         })
 
     } catch (error) {
-        // Return the actual error message so we can see it in the frontend
-        return new Response(JSON.stringify({ error: error.message || 'Unknown Error' }), {
+        console.error('Final Error Log:', error)
+        return new Response(JSON.stringify({ error: error.message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500,
         })
