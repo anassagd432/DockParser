@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3"
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.13.0"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
