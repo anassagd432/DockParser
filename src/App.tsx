@@ -11,6 +11,7 @@ import { Terms } from "./pages/Terms";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import type { Session } from "@supabase/supabase-js";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -44,11 +45,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background text-white font-sans antialiased selection:bg-blue-500/30">
+      <SpeedInsights />
       <BrowserRouter>
         <Toaster position="top-right" theme="dark" closeButton />
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
           <Route path="/" element={<LandingPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<Privacy />} />
