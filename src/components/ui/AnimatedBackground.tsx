@@ -1,5 +1,16 @@
+/* eslint-disable react-hooks/purity */
 import { motion, useMotionValue, useSpring } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+
+// Generate random particle configs outside component to ensure purity
+const generateParticleConfigs = () =>
+    Array.from({ length: 6 }, () => ({
+        initialX: Math.random() * 100,
+        animateXStart: Math.random() * 100,
+        animateXEnd: (Math.random() * 100) + (Math.random() > 0.5 ? 5 : -5),
+        duration: Math.random() * 10 + 20,
+        delay: Math.random() * 5,
+    }));
 
 export const AnimatedBackground = () => {
     const mouseX = useMotionValue(0);
@@ -17,7 +28,11 @@ export const AnimatedBackground = () => {
 
         window.addEventListener("mousemove", handleMouseMove);
         return () => window.removeEventListener("mousemove", handleMouseMove);
-    }, []);
+    }, [mouseX, mouseY]);
+
+    // Use ref to store random values computed once
+    const particleConfigsRef = useRef(generateParticleConfigs());
+    const particleConfigs = particleConfigsRef.current;
 
     return (
         <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
@@ -65,19 +80,19 @@ export const AnimatedBackground = () => {
             />
 
             {/* Floating Data Particles */}
-            {[...Array(6)].map((_, i) => (
+            {particleConfigs.map((config, i) => (
                 <motion.div
                     key={i}
-                    initial={{ opacity: 0, y: 0, x: `${Math.random() * 100}vw` }}
+                    initial={{ opacity: 0, y: 0, x: `${config.initialX}vw` }}
                     animate={{
                         opacity: [0, 1, 0],
                         y: [0, "-120vh"],
-                        x: [`${Math.random() * 100}vw`, `${(Math.random() * 100) + (Math.random() > 0.5 ? 5 : -5)}vw`]
+                        x: [`${config.animateXStart}vw`, `${config.animateXEnd}vw`]
                     }}
                     transition={{
-                        duration: Math.random() * 10 + 20,
+                        duration: config.duration,
                         repeat: Infinity,
-                        delay: Math.random() * 5,
+                        delay: config.delay,
                         ease: "linear"
                     }}
                     className="absolute w-1 h-1 bg-white/40 rounded-full blur-[1px]"

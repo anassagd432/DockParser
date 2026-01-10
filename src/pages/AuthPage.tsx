@@ -35,8 +35,8 @@ export const AuthPage = ({ initialMode = 'login' }: AuthPageProps) => {
             } else {
                 toast.success("Account created! Please check your email.");
             }
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Authentication failed');
         } finally {
             setLoading(false);
         }
@@ -51,8 +51,8 @@ export const AuthPage = ({ initialMode = 'login' }: AuthPageProps) => {
                 },
             });
             if (error) throw error;
-        } catch (error: any) {
-            toast.error("Google login failed: " + error.message);
+        } catch (error: unknown) {
+            toast.error("Google login failed: " + (error instanceof Error ? error.message : 'Unknown error'));
         }
     };
 

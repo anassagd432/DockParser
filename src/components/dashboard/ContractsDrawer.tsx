@@ -12,8 +12,15 @@ interface ContractsDrawerProps {
     onClose: () => void;
 }
 
+interface Contract {
+    id: string;
+    vendor_name?: string;
+    filename: string;
+    created_at: string;
+}
+
 export const ContractsDrawer = ({ isOpen, onClose }: ContractsDrawerProps) => {
-    const [contracts, setContracts] = useState<any[]>([]);
+    const [contracts, setContracts] = useState<Contract[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchContracts = async () => {
@@ -65,9 +72,9 @@ export const ContractsDrawer = ({ isOpen, onClose }: ContractsDrawerProps) => {
 
             toast.success(`Contract processed for ${rulesData.vendor_name}`, { id: toastId });
             fetchContracts();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            toast.error("Upload/Extraction failed: " + error.message, { id: toastId });
+            toast.error("Upload/Extraction failed: " + (error instanceof Error ? error.message : 'Unknown error'), { id: toastId });
         }
     };
 

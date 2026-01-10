@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../ui/Button";
 import { GlassCard } from "../ui/GlassCard";
-import type { Invoice } from "./InvoicesTable";
+import type { Invoice, AuditFlag, LineItem } from "./InvoicesTable";
 
 interface InvoiceDrawerProps {
     invoice: Invoice | null;
@@ -53,7 +53,7 @@ export const InvoiceDrawer = ({ invoice, onClose }: InvoiceDrawerProps) => {
                                         <div>
                                             <h3 className="text-red-400 font-semibold text-sm">Potential Contract Violation Detected</h3>
                                             <div className="mt-2 space-y-1">
-                                                {invoice.extracted_data.audit_flags.map((flag: any, idx: number) => (
+                                                {invoice.extracted_data.audit_flags.map((flag: AuditFlag, idx: number) => (
                                                     <p key={idx} className="text-xs text-red-300/80">
                                                         • <span className="font-medium text-red-300">{flag.item}:</span> {flag.issue}
                                                     </p>
@@ -101,7 +101,7 @@ export const InvoiceDrawer = ({ invoice, onClose }: InvoiceDrawerProps) => {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-white/5 text-gray-300">
-                                                {invoice.extracted_data.line_items.map((item: any, idx: number) => (
+                                                {invoice.extracted_data.line_items.map((item: LineItem, idx: number) => (
                                                     <tr key={idx} className="hover:bg-white/5">
                                                         <td className="px-4 py-3">{item.description}</td>
                                                         <td className="px-4 py-3 text-right">{item.qty}</td>

@@ -4,7 +4,7 @@ import { useInvoices } from "../../hooks/useInvoices";
 import { Button } from "../ui/Button";
 import { StatsCard } from "./StatsCard";
 import { UploadZone } from "./UploadZone";
-import { InvoicesTable } from "./InvoicesTable";
+import { InvoicesTable, type Invoice, type LineItem } from "./InvoicesTable";
 import { processInvoice } from "../../api/invoice-service";
 import { DollarSign, FileText, Clock, Plus, Upload } from "lucide-react";
 import { InvoiceDrawer } from "./InvoiceDrawer";
@@ -16,7 +16,7 @@ export const Dashboard = () => {
     const { invoices, refresh } = useInvoices();
 
     // State for selected invoice (Drawer)
-    const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
+    const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
     const [isContractsOpen, setIsContractsOpen] = useState(false);
 
     const [isUploading, setIsUploading] = useState(false);
@@ -38,9 +38,9 @@ export const Dashboard = () => {
             refresh();
 
             toast.success("Invoice processed successfully!", { id: toastId });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Upload failed", error);
-            toast.error(error.message || "Failed to process invoice", { id: toastId });
+            toast.error(error instanceof Error ? error.message : "Failed to process invoice", { id: toastId });
         } finally {
             setIsUploading(false);
         }
@@ -69,7 +69,7 @@ export const Dashboard = () => {
             }
 
             // Return a row for each line item
-            return lineItems.map((item: any) => [
+            return lineItems.map((item: LineItem) => [
                 inv.invoice_date,
                 `"${inv.vendor}"`,
                 inv.total_amount,

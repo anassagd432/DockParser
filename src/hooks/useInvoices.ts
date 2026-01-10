@@ -50,9 +50,9 @@ export function useInvoices() {
             }));
 
             setInvoices(formattedInvoices);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Error fetching invoices:", err);
-            setError(err.message);
+            setError(err instanceof Error ? err.message : 'Unknown error');
         } finally {
             setLoading(false);
         }

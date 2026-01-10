@@ -11,7 +11,7 @@ import { UserMenu } from "../components/dashboard/UserMenu";
 export const SettingsPage = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<{ email?: string; user_metadata?: { full_name?: string } } | null>(null);
     const [fullName, setFullName] = useState("");
     const [deleteConfirm, setDeleteConfirm] = useState("");
     const [isDeleting, setIsDeleting] = useState(false);
@@ -37,8 +37,8 @@ export const SettingsPage = () => {
             });
             if (error) throw error;
             toast.success("Profile updated successfully");
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Update failed');
         } finally {
             setLoading(false);
         }
@@ -60,9 +60,9 @@ export const SettingsPage = () => {
             await supabase.auth.signOut();
             toast.success("Account deleted successfully");
             navigate("/");
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Delete failed:", error);
-            toast.error("Failed to delete account: " + error.message);
+            toast.error("Failed to delete account: " + (error instanceof Error ? error.message : 'Unknown error'));
         } finally {
             setIsDeleting(false);
         }

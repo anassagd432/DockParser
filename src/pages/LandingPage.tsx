@@ -363,25 +363,13 @@ export const LandingPage = () => {
                             <ul className="space-y-2 text-sm text-gray-400">
                                 <li><a href="#features" className="hover:text-blue-400 transition-colors">Features</a></li>
                                 <li><a href="#pricing" className="hover:text-blue-400 transition-colors">Pricing</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">API Docs</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Changelog</a></li>
+                                <li><a href="#how-it-works" className="hover:text-blue-400 transition-colors">How it Works</a></li>
                             </ul>
                         </div>
                         <div>
-                            <h3 className="text-white font-semibold mb-4 font-display">Company</h3>
+                            <h3 className="text-white font-semibold mb-4 font-display">Support</h3>
                             <ul className="space-y-2 text-sm text-gray-400">
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">About Us</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Careers</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Blog</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Contact</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h3 className="text-white font-semibold mb-4 font-display">Resources</h3>
-                            <ul className="space-y-2 text-sm text-gray-400">
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Community</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Help Center</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Status</a></li>
+                                <li><Link to="/contact" className="hover:text-blue-400 transition-colors">Contact</Link></li>
                             </ul>
                         </div>
                         <div>
@@ -389,7 +377,13 @@ export const LandingPage = () => {
                             <ul className="space-y-2 text-sm text-gray-400">
                                 <li><Link to="/privacy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
                                 <li><Link to="/terms" className="hover:text-blue-400 transition-colors">Terms of Service</Link></li>
-                                <li><Link to="/security" className="hover:text-blue-400 transition-colors">Security</Link></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-semibold mb-4 font-display">Connect</h3>
+                            <ul className="space-y-2 text-sm text-gray-400">
+                                <li><a href="https://www.linkedin.com/in/anass-agdi-918209381" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">LinkedIn</a></li>
+                                <li><a href="https://x.com/anass_agdi" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">X (Twitter)</a></li>
                             </ul>
                         </div>
                     </div>
@@ -398,10 +392,9 @@ export const LandingPage = () => {
                             <Logo className="h-6 w-6" textClassName="text-base mr-2" />
                             <span className="ml-2">© 2026 DockParser. All rights reserved.</span>
                         </div>
-                        <div className="flex gap-6">
-                            <a href="#" className="hover:text-white transition-colors">Twitter</a>
-                            <a href="#" className="hover:text-white transition-colors">GitHub</a>
-                            <a href="#" className="hover:text-white transition-colors">LinkedIn</a>
+                        <div className="flex items-center gap-2">
+                            <span>Built by</span>
+                            <a href="https://www.linkedin.com/in/anass-agdi-918209381" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">Anass Agdi</a>
                         </div>
                     </div>
                 </div>

@@ -7,6 +7,23 @@ import {
 import { GlassCard } from "../ui/GlassCard";
 import { cn } from "../../lib/utils";
 
+export interface LineItem {
+    description: string;
+    qty: number;
+    unit_price: number;
+    total: number;
+}
+
+export interface AuditFlag {
+    item: string;
+    issue: string;
+}
+
+export interface ExtractedData {
+    line_items?: LineItem[];
+    audit_flags?: AuditFlag[];
+}
+
 export type Invoice = {
     id: string;
     vendor: string;
@@ -15,7 +32,7 @@ export type Invoice = {
     currency: string;
     status: "Review" | "Approved" | "Processing";
     confidence: number;
-    extracted_data?: any; // Holds line items and raw data
+    extracted_data?: ExtractedData;
 };
 
 const columnHelper = createColumnHelper<Invoice>();
@@ -26,7 +43,7 @@ const columns = [
         cell: info => (
             <div className="flex items-center gap-2">
                 <span className="font-medium text-white">{info.getValue()}</span>
-                {info.row.original.extracted_data?.audit_flags?.length > 0 && (
+                {(info.row.original.extracted_data?.audit_flags?.length ?? 0) > 0 && (
                     <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" title="Audit Issues Found" />
                 )}
             </div>

@@ -41,8 +41,8 @@ export const SignupPage = () => {
             const { error } = await supabase.auth.signUp({ email, password });
             if (error) throw error;
             toast.success("Account created! Please check your email.");
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Signup failed');
             setShake(true);
         } finally {
             setLoading(false);
@@ -56,8 +56,8 @@ export const SignupPage = () => {
                 options: { redirectTo: `${window.location.origin}/dashboard` },
             });
             if (error) throw error;
-        } catch (error: any) {
-            toast.error("Google login failed: " + error.message);
+        } catch (error: unknown) {
+            toast.error("Google login failed: " + (error instanceof Error ? error.message : 'Unknown error'));
         }
     };
 

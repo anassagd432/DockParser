@@ -21,8 +21,8 @@ export const LoginPage = () => {
             if (error) throw error;
             toast.success("Welcome back!");
             navigate("/dashboard");
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Login failed');
         } finally {
             setLoading(false);
         }
@@ -35,8 +35,8 @@ export const LoginPage = () => {
                 options: { redirectTo: `${window.location.origin}/dashboard` },
             });
             if (error) throw error;
-        } catch (error: any) {
-            toast.error("Google login failed: " + error.message);
+        } catch (error: unknown) {
+            toast.error("Google login failed: " + (error instanceof Error ? error.message : 'Unknown error'));
         }
     };
 
