@@ -4,6 +4,8 @@
 
 DockParser is an AI-Native document processing engine designed for the logistics industry. It leverages multimodal LLMs (Google Gemini 3.0 Pro) and Supabase Edge Functions to automatically extract, validate, and structure data from invoices and contracts with high precision.
 
+**🌐 Live Demo:** [https://dock-parser.vercel.app/](https://dock-parser.vercel.app/)
+
 ![DockParser UI](/public/logo.png)
 
 ## 🚀 Features
