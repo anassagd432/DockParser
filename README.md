@@ -60,10 +60,10 @@ DockParser is an AI-Native document processing engine designed for the logistics
 
 **Anass Agdi**
 
--   **LinkedIn**: [Anass Agdi](https://www.linkedin.com/in/anass-agdi-918209381)
+-   **LinkedIn**: [Anass Agdi](https://www.linkedin.com/in/anass-agdi)
 -   **X (Twitter)**: [@anass_agdi](https://x.com/anass_agdi)
 -   **GitHub**: [anassagd432](https://github.com/anassagd432)
 
 ---
 
-Built with ❤️ by Anass Agdi
+Built by Anass Agdi
